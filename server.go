@@ -102,6 +102,7 @@ func (server *ConsulServer) RegisterServer() {
 	if err != nil{
 		log.Panic("Register server error.",err)
 	}
+	healthCheck := ip + ":" + strconv.Itoa(server.Port) + server.HealthURL
 	reg := &consulapi.AgentServiceRegistration{
 		ID:      ip + ":" + strconv.Itoa(server.Port),
 		Name:    server.Name,
@@ -109,10 +110,10 @@ func (server *ConsulServer) RegisterServer() {
 		Address: ip,
 		Tags:    []string{server.Name},
 		Check: &consulapi.AgentServiceCheck{
-			HTTP:                           server.HealthURL,
+			HTTP:                           healthCheck,
 			Timeout:                        server.Config.Timeout,
 			Interval:                       server.Config.Interval,            //健康检查间隔
-			GRPC:                           server.HealthURL,                  // grpc 支持，执行健康检查的地址，service 会传到 Health.Check 函数中
+			GRPC:                           healthCheck,                  // grpc 支持，执行健康检查的地址，service 会传到 Health.Check 函数中
 			DeregisterCriticalServiceAfter: server.Config.DeregisterCriticalServiceAfter, //注销时间，相当于过期时间,check失败后30秒删除本服务
 		},
 	}
