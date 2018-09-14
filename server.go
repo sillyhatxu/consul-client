@@ -72,7 +72,9 @@ func NewConsulServer(enviromentName string,name string,port int,healthURL string
 
 func (server *ConsulServer) SetConsulAddress(consulAddress string){
 	server.ConsulAddress = consulAddress
-	server.DockerConfig.IsDocker = false
+	if consulAddress != ""{
+		server.DockerConfig.IsDocker = false
+	}
 }
 
 func (server *ConsulServer) SetDockerConfig(config *DockerConfig){
