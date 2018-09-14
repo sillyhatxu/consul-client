@@ -104,7 +104,7 @@ func (server *ConsulServer) RegisterServer() {
 	}
 	//http : http://172.28.2.106:18002/health
 	//GRPC : 172.28.2.106:18002/payment
-	healthCheck := "https://" + ip + ":" + strconv.Itoa(server.Port) + server.HealthURL
+	healthCheck := "http://" + ip + ":" + strconv.Itoa(server.Port) + server.HealthURL
 
 	reg := &consulapi.AgentServiceRegistration{
 		ID:      ip + ":" + strconv.Itoa(server.Port),
@@ -115,8 +115,8 @@ func (server *ConsulServer) RegisterServer() {
 		Check: &consulapi.AgentServiceCheck{
 			HTTP:                           healthCheck,
 			Timeout:                        server.Config.Timeout,
-			Interval:                       server.Config.Interval,            //健康检查间隔
-			GRPC:                           ip + "/" + server.Name,                  // grpc 支持，执行健康检查的地址，service 会传到 Health.Check 函数中
+			Interval:                       server.Config.Interval,                       //健康检查间隔
+			GRPC:                           ip + "/" + server.Name,                       // grpc 支持，执行健康检查的地址，service 会传到 Health.Check 函数中
 			DeregisterCriticalServiceAfter: server.Config.DeregisterCriticalServiceAfter, //注销时间，相当于过期时间,check失败后30秒删除本服务
 		},
 	}
