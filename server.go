@@ -96,6 +96,7 @@ func (server *ConsulServer) RegisterServer() {
 	}else{
 		config.Address = server.ConsulAddress
 	}
+	log.Info("Consul address : ",config.Address)
 	client, err := consulapi.NewClient(config)
 	if err != nil {
 		log.Panic("New consul client error : ", err)
