@@ -65,7 +65,7 @@ func NewConsulServer(enviromentName string,name string,port int,healthURL string
 		Name:name,
 		Port:port,
 		HealthURL:healthURL,
-		DockerConfig:&DockerConfig{IsDocker:true,ConsulName:default_consul_name,Endpoint:default_endpoint,StackName:enviromentName,NetworkName:enviromentName+"_default"},
+		DockerConfig:&DockerConfig{IsDocker:true,ConsulName:enviromentName + "_" + default_consul_name,Endpoint:default_endpoint,StackName:enviromentName,NetworkName:enviromentName+"_default"},
 		Config:&Config{Timeout:timeout,Interval:interval,DeregisterCriticalServiceAfter:deregister_critical_service_after},
 	}
 }
@@ -129,7 +129,10 @@ func (server *ConsulServer) RegisterServer() {
 }
 
 func (server *ConsulServer) getDockerService() (*dockerSwarm.Service,error) {
+	log.Info("Endpoint : ",server.DockerConfig.Endpoint)
+	log.Info("Network Name : ",server.DockerConfig.NetworkName)
 	client := docker.NewDockerClient(server.DockerConfig.Endpoint)
+	log.Info("Find consul name : ",server.DockerConfig.ConsulName)
 	serviceArray,err := client.ServiceLSFilter(server.DockerConfig.ConsulName)
 	if err != nil{
 		log.Error("Docker service ls --filter error.",err)
@@ -143,7 +146,10 @@ func (server *ConsulServer) getDockerService() (*dockerSwarm.Service,error) {
 
 
 func (server *ConsulServer) getDockerNetwork() (*dockerClient.Network,error) {
+	log.Info("Endpoint : ",server.DockerConfig.Endpoint)
+	log.Info("Network Name : ",server.DockerConfig.NetworkName)
 	client := docker.NewDockerClient(server.DockerConfig.Endpoint)
+	log.Info("Find network name : ",server.DockerConfig.NetworkName)
 	networkArray,err := client.NetworkLSFilter(server.DockerConfig.NetworkName)
 	if err != nil{
 		log.Error("Docker network ls --filter error.",err)
@@ -162,11 +168,12 @@ func (server *ConsulServer) getConsulIPFromDockerSwarm(virtualIPArray []dockerSw
 	}
 	for _,virtualIP := range virtualIPArray{
 		if virtualIP.NetworkID == dockerNetwork.ID{
-			log.Info("Consul IP : ",virtualIP.Addr)
 			ip,err := cidrToIP(virtualIP.Addr)
 			if err != nil{
+				log.Errorf("cidrToIP error.CIDR : %v.",virtualIP.Addr,err)
 				return "",err
 			}
+			log.Info("Consul IP : ",ip)
 			return ip,nil
 		}
 	}
@@ -180,7 +187,11 @@ func (server *ConsulServer) getConsulAddressFromDockerSwarm() (string,error) {
 		return "",err
 	}
 	ip,err := server.getConsulIPFromDockerSwarm(dockerService.Endpoint.VirtualIPs)
-	return ip + ":" + default_consul_port,errors.New("Uknow consul ip.")
+	if err != nil{
+		log.Error("Get consul ip from docker swarm error.",err)
+		return "",err
+	}
+	return ip + ":" + default_consul_port,nil
 }
 
 func localIP() (string,error) {
