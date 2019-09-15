@@ -1,0 +1,1 @@
+docker stack deploy -c /Users/shikuanxu/go/src/github.com/sillyhatxu/consul-client/docker/consul/docker-compose.yml sillyhat

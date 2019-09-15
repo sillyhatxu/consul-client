@@ -1,35 +1,61 @@
 package consul
 
 import (
-	"testing"
-	log "github.com/xushikuan/microlog"
+	"fmt"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-func TestNewConsulServer(t *testing.T) {
-	test := NewConsulServer("dev","test",8080,"")
-	log.Info(test,test.Config)
-	test.SetConsulAddress("127.0.0.1:8500")
-	log.Info(test,test.Config)
-	//test.SetDockerEndpoint("unix:///var/run/docker.sock")
-	//log.Info(test,test.Config)
+const (
+	address     = "localhost:8500"
+	clusterName = "test-http"
+	clusterHost = "host.docker.internal"
+	//clusterHost = "localhost"
+	clusterPort = 8801
+)
 
-	test.SetConfig(&Config{Timeout:"5s",Interval:"30s",DeregisterCriticalServiceAfter:"60s"})
-	log.Info(test,test.Config)
+var consulServer = NewConsulServer(address, clusterName, clusterHost, clusterPort, CheckType(HealthCheckHttp))
+
+func TestPutCache(t *testing.T) {
+	err := consulServer.Put("test-cache", []byte("test"))
+	assert.Nil(t, err)
 }
 
-func TestGetLocalIP(t *testing.T) {
-	ip,err := localIP()
-	assert.Nil(t,err)
-	log.Info(ip)
+func TestGetListCache(t *testing.T) {
+	err := consulServer.Put("test-cache1", []byte("test1"))
+	assert.Nil(t, err)
+	err = consulServer.Put("test-cache2", []byte("test2"))
+	assert.Nil(t, err)
+	err = consulServer.Put("test-cache3", []byte("test3"))
+	assert.Nil(t, err)
+	err = consulServer.Put("test-cache4", []byte("test4"))
+	assert.Nil(t, err)
+	err = consulServer.Put("test-cache5", []byte("test5"))
+	assert.Nil(t, err)
+	pairs, ok := consulServer.List("test-cache")
+	assert.EqualValues(t, ok, true)
+	for i, pair := range pairs {
+		logrus.Infof("i : %d, pair : %s", i, string(pair.Value))
+	}
+
 }
 
-func TestCIDRToIP(t *testing.T) {
-	ip,err := cidrToIP("10.255.3.65/16")
-	assert.Nil(t,err)
-	log.Info(ip)
+func testKey(i int) string {
+	return fmt.Sprintf("test-cache%d", i)
+}
 
-	ip2,err := cidrToIP("10.0.0.5/24")
-	assert.Nil(t,err)
-	log.Info(ip2)
+func TestGetCache(t *testing.T) {
+	value, ok := consulServer.Get("test-cache")
+	assert.EqualValues(t, ok, true)
+	assert.EqualValues(t, value, []byte("test"))
+
+	value, ok = consulServer.Get("test-cache2")
+	assert.EqualValues(t, ok, false)
+	assert.Nil(t, value)
+}
+
+func TestDeleteCache(t *testing.T) {
+	err := consulServer.Delete("test-cache")
+	assert.Nil(t, err)
 }

@@ -1,0 +1,9 @@
+version: '3.7'
+
+services:
+  consul:
+    image: consul:1.6.1
+    ports:
+      - "8400:8400"
+      - "8500:8500"
+    command: agent -dev -ui -server -bootstrap -client 0.0.0.0
